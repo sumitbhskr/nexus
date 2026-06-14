@@ -1,0 +1,633 @@
+# version: '3.9'
+
+# services:
+#   # ─── MongoDB ────────────────────────────────────────────────
+#   mongodb:
+#     image: mongo:7.0
+#     container_name: nexus_mongodb
+#     restart: unless-stopped
+#     environment:
+#       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-nexus}
+#       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-nexus_dev_password}
+#       MONGO_INITDB_DATABASE: nexus
+#     ports:
+#       - '27017:27017'
+#     volumes:
+#       - mongodb_data:/data/db
+#       - ./apps/api/src/scripts/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+#     healthcheck:
+#       test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#     networks:
+#       - nexus_network
+
+#   # ─── Redis ──────────────────────────────────────────────────
+#   redis:
+#     image: redis:7.2-alpine
+#     container_name: nexus_redis
+#     restart: unless-stopped
+#     command: redis-server --requirepass ${REDIS_PASSWORD:-nexus_redis_password} --appendonly yes
+#     ports:
+#       - '6379:6379'
+#     volumes:
+#       - redis_data:/data
+#     healthcheck:
+#       test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-nexus_redis_password}', 'ping']
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#     networks:
+#       - nexus_network
+
+#   # ─── Qdrant (Vector DB for RAG) ─────────────────────────────
+#   qdrant:
+#     image: qdrant/qdrant:v1.10.1
+#     container_name: nexus_qdrant
+#     restart: unless-stopped
+#     ports:
+#       - '6333:6333'
+#       - '6334:6334'
+#     volumes:
+#       - qdrant_data:/qdrant/storage
+#     environment:
+#       QDRANT__SERVICE__HTTP_PORT: 6333
+#       QDRANT__SERVICE__GRPC_PORT: 6334
+#     healthcheck:
+#       test: ['CMD', 'curl', '-f', 'http://localhost:6333/']
+#       interval: 10s
+#       timeout: 5s
+#       retries: 10
+#       start_period: 30s
+#     networks:
+#       - nexus_network
+
+#   # ─── API ────────────────────────────────────────────────────
+#   api:
+#     build:
+#       context: ./Backend/apps/api
+#       dockerfile: Dockerfile
+#     container_name: nexus_api
+#     restart: unless-stopped
+#     ports:
+#       - '3001:3001'
+#     env_file:
+#       - .env
+#     environment:
+#       NODE_ENV: development
+#       MONGODB_URI: mongodb://${MONGO_ROOT_USER:-nexus}:${MONGO_ROOT_PASSWORD:-nexus_dev_password}@mongodb:27017/nexus?authSource=admin
+#       REDIS_URL: redis://:${REDIS_PASSWORD:-nexus_redis_password}@redis:6379
+#       QDRANT_URL: http://qdrant:6333
+#     depends_on:
+#       mongodb:
+#         condition: service_healthy
+#       redis:
+#         condition: service_healthy
+#       qdrant:
+#         condition: service_healthy
+#     volumes:
+#       - ./Backend/apps/api/src:/app/src
+#       - ./Backend/apps/api/uploads:/app/uploads
+#     networks:
+#       - nexus_network
+
+#   # ─── Web ────────────────────────────────────────────────────
+#   web:
+#     build:
+#       context: ./Frontend/apps/web
+#       dockerfile: Dockerfile
+#     container_name: nexus_web
+#     restart: unless-stopped
+#     ports:
+#       - '3000:3000'
+#     env_file:
+#       - .env
+#     environment:
+#       NEXT_PUBLIC_API_URL: http://localhost:3001
+#       NEXT_PUBLIC_WS_URL: ws://localhost:3001
+#     depends_on:
+#       - api
+#     volumes:
+#       - ./Frontend/apps/web:/app
+#       - /app/node_modules
+#       - /app/.next
+#     networks:
+#       - nexus_network
+
+#   # ─── Prometheus ─────────────────────────────────────────────
+#   prometheus:
+#     image: prom/prometheus:v2.53.0
+#     container_name: nexus_prometheus
+#     restart: unless-stopped
+#     ports:
+#       - '9090:9090'
+#     volumes:
+#       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+#       - prometheus_data:/prometheus
+#     command:
+#       - '--config.file=/etc/prometheus/prometheus.yml'
+#       - '--storage.tsdb.path=/prometheus'
+#       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+#       - '--web.console.templates=/usr/share/prometheus/consoles'
+#     networks:
+#       - nexus_network
+
+#   # ─── Grafana ────────────────────────────────────────────────
+#   grafana:
+#     image: grafana/grafana:11.1.0
+#     container_name: nexus_grafana
+#     restart: unless-stopped
+#     ports:
+#       - '3003:3000'
+#     environment:
+#       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+#       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-nexus_grafana}
+#       GF_USERS_ALLOW_SIGN_UP: 'false'
+#     volumes:
+#       - grafana_data:/var/lib/grafana
+#       - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+#       - ./infra/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+#     depends_on:
+#       - prometheus
+#     networks:
+#       - nexus_network
+
+# volumes:
+#   mongodb_data:
+#   redis_data:
+#   qdrant_data:
+#   prometheus_data:
+#   grafana_data:
+
+# networks:
+#   nexus_network:
+#     driver: bridge
+
+
+#   
+
+
+# services:
+#   # ─── MongoDB ────────────────────────────────────────────────
+#   mongodb:
+#     image: mongo:7.0
+#     container_name: nexus_mongodb
+#     restart: unless-stopped
+#     environment:
+#       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-nexus}
+#       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-nexus_dev_password}
+#       MONGO_INITDB_DATABASE: nexus
+#     ports:
+#       - '27017:27017'
+#     volumes:
+#       - mongodb_data:/data/db
+#       - ./Backend/apps/api/src/scripts/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+#     healthcheck:
+#       test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 20s
+#     networks:
+#       - nexus_network
+
+#   # ─── Redis ──────────────────────────────────────────────────
+#   redis:
+#     image: redis:7.2-alpine
+#     container_name: nexus_redis
+#     restart: unless-stopped
+#     command: redis-server --requirepass ${REDIS_PASSWORD:-nexus_redis_password} --appendonly yes
+#     ports:
+#       - '6379:6379'
+#     volumes:
+#       - redis_data:/data
+#     healthcheck:
+#       test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-nexus_redis_password}', 'ping']
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 10s
+#     networks:
+#       - nexus_network
+
+#   # ─── Qdrant (Vector DB for RAG) ─────────────────────────────
+#   qdrant:
+#     image: qdrant/qdrant:v1.10.1
+#     container_name: nexus_qdrant
+#     restart: unless-stopped
+#     ports:
+#       - '6333:6333'
+#       - '6334:6334'
+#     volumes:
+#       - qdrant_data:/qdrant/storage
+#     environment:
+#       QDRANT__SERVICE__HTTP_PORT: 6333
+#       QDRANT__SERVICE__GRPC_PORT: 6334
+#     healthcheck:
+#       test: ['CMD-SHELL', 'wget -qO- http://localhost:6333/ || exit 1']
+#       interval: 10s
+#       timeout: 5s
+#       retries: 10
+#       start_period: 30s
+#     networks:
+#       - nexus_network
+
+#   # ─── API ────────────────────────────────────────────────────
+#   api:
+#     build:
+#       context: ./Backend/apps/api
+#       dockerfile: Dockerfile
+#     container_name: nexus_api
+#     restart: unless-stopped
+#     ports:
+#       - '3001:3001'
+#     env_file:
+#       - .env
+#     environment:
+#       NODE_ENV: development
+#       MONGODB_URI: mongodb://${MONGO_ROOT_USER:-nexus}:${MONGO_ROOT_PASSWORD:-nexus_dev_password}@mongodb:27017/nexus?authSource=admin
+#       REDIS_URL: redis://:${REDIS_PASSWORD:-nexus_redis_password}@redis:6379
+#       QDRANT_URL: http://qdrant:6333
+#     depends_on:
+#       mongodb:
+#         condition: service_healthy
+#       redis:
+#         condition: service_healthy
+#       qdrant:
+#         condition: service_healthy
+#     volumes:
+#       - ./Backend/apps/api/src:/app/src
+#       - ./Backend/apps/api/uploads:/app/uploads
+#     networks:
+#       - nexus_network
+
+#   # ─── Web ────────────────────────────────────────────────────
+#   web:
+#     build:
+#       context: ./Frontend/apps/web
+#       dockerfile: Dockerfile
+#     container_name: nexus_web
+#     restart: unless-stopped
+#     ports:
+#       - '3000:3000'
+#     env_file:
+#       - .env
+#     environment:
+#       NEXT_PUBLIC_API_URL: http://localhost:3001
+#       NEXT_PUBLIC_WS_URL: ws://localhost:3001
+#     depends_on:
+#       - api
+#     networks:
+#       - nexus_network
+
+#   # ─── Prometheus ─────────────────────────────────────────────
+#   prometheus:
+#     image: prom/prometheus:v2.53.0
+#     container_name: nexus_prometheus
+#     restart: unless-stopped
+#     ports:
+#       - '9090:9090'
+#     volumes:
+#       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+#       - prometheus_data:/prometheus
+#     command:
+#       - '--config.file=/etc/prometheus/prometheus.yml'
+#       - '--storage.tsdb.path=/prometheus'
+#       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+#       - '--web.console.templates=/usr/share/prometheus/consoles'
+#     networks:
+#       - nexus_network
+
+#   # ─── Grafana ────────────────────────────────────────────────
+#   grafana:
+#     image: grafana/grafana:11.1.0
+#     container_name: nexus_grafana
+#     restart: unless-stopped
+#     ports:
+#       - '3003:3000'
+#     environment:
+#       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+#       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-nexus_grafana}
+#       GF_USERS_ALLOW_SIGN_UP: 'false'
+#     volumes:
+#       - grafana_data:/var/lib/grafana
+#       - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+#       - ./infra/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+#     depends_on:
+#       - prometheus
+#     networks:
+#       - nexus_network
+
+# volumes:
+#   mongodb_data:
+#   redis_data:
+#   qdrant_data:
+#   prometheus_data:
+#   grafana_data:
+
+# networks:
+#   nexus_network:
+#     driver: bridge
+
+
+
+# 
+# 
+# services:
+#   # ─── MongoDB ────────────────────────────────────────────────
+#   mongodb:
+#     image: mongo:7.0
+#     container_name: nexus_mongodb
+#     restart: unless-stopped
+#     environment:
+#       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-nexus}
+#       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-nexus_dev_password}
+#       MONGO_INITDB_DATABASE: nexus
+#     ports:
+#       - '27017:27017'
+#     volumes:
+#       - mongodb_data:/data/db
+#       - ./Backend/apps/api/src/scripts/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+#     healthcheck:
+#       test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 20s
+#     networks:
+#       - nexus_network
+
+#   # ─── Redis ──────────────────────────────────────────────────
+#   redis:
+#     image: redis:7.2-alpine
+#     container_name: nexus_redis
+#     restart: unless-stopped
+#     command: redis-server --requirepass ${REDIS_PASSWORD:-nexus_redis_password} --appendonly yes
+#     ports:
+#       - '6379:6379'
+#     volumes:
+#       - redis_data:/data
+#     healthcheck:
+#       test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-nexus_redis_password}', 'ping']
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 10s
+#     networks:
+#       - nexus_network
+
+#   # ─── Qdrant (Vector DB for RAG) ─────────────────────────────
+#   qdrant:
+#     image: qdrant/qdrant:v1.10.1
+#     container_name: nexus_qdrant
+#     restart: unless-stopped
+#     ports:
+#       - '6333:6333'
+#       - '6334:6334'
+#     volumes:
+#       - qdrant_data:/qdrant/storage
+#     environment:
+#       QDRANT__SERVICE__HTTP_PORT: 6333
+#       QDRANT__SERVICE__GRPC_PORT: 6334
+#     networks:
+#       - nexus_network
+
+#   # ─── API ────────────────────────────────────────────────────
+#   api:
+#     build:
+#       context: ./Backend/apps/api
+#       dockerfile: Dockerfile
+#     container_name: nexus_api
+#     restart: unless-stopped
+#     ports:
+#       - '3001:3001'
+#     env_file:
+#       - .env
+#     environment:
+#       NODE_ENV: development
+#       MONGODB_URI: mongodb://${MONGO_ROOT_USER:-nexus}:${MONGO_ROOT_PASSWORD:-nexus_dev_password}@mongodb:27017/nexus?authSource=admin
+#       REDIS_URL: redis://:${REDIS_PASSWORD:-nexus_redis_password}@redis:6379
+#       QDRANT_URL: http://qdrant:6333
+#     depends_on:
+#       mongodb:
+#         condition: service_healthy
+#       redis:
+#         condition: service_healthy
+#     networks:
+#       - nexus_network
+
+#   # ─── Web ────────────────────────────────────────────────────
+#   web:
+#     build:
+#       context: ./Frontend/apps/web
+#       dockerfile: Dockerfile
+#     container_name: nexus_web
+#     restart: unless-stopped
+#     ports:
+#       - '3000:3000'
+#     env_file:
+#       - .env
+#     environment:
+#       NEXT_PUBLIC_API_URL: http://localhost:3001
+#       NEXT_PUBLIC_WS_URL: ws://localhost:3001
+#     depends_on:
+#       - api
+#     networks:
+#       - nexus_network
+
+#   # ─── Prometheus ─────────────────────────────────────────────
+#   prometheus:
+#     image: prom/prometheus:v2.53.0
+#     container_name: nexus_prometheus
+#     restart: unless-stopped
+#     ports:
+#       - '9090:9090'
+#     volumes:
+#       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+#       - prometheus_data:/prometheus
+#     command:
+#       - '--config.file=/etc/prometheus/prometheus.yml'
+#       - '--storage.tsdb.path=/prometheus'
+#       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+#       - '--web.console.templates=/usr/share/prometheus/consoles'
+#     networks:
+#       - nexus_network
+
+#   # ─── Grafana ────────────────────────────────────────────────
+#   grafana:
+#     image: grafana/grafana:11.1.0
+#     container_name: nexus_grafana
+#     restart: unless-stopped
+#     ports:
+#       - '3003:3000'
+#     environment:
+#       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+#       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-nexus_grafana}
+#       GF_USERS_ALLOW_SIGN_UP: 'false'
+#     volumes:
+#       - grafana_data:/var/lib/grafana
+#       - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+#       - ./infra/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+#     depends_on:
+#       - prometheus
+#     networks:
+#       - nexus_network
+
+# volumes:
+#   mongodb_data:
+#   redis_data:
+#   qdrant_data:
+#   prometheus_data:
+#   grafana_data:
+
+# networks:
+#   nexus_network:
+#     driver: bridge
+
+# 
+
+
+# Seedha file overwrite karo
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: nexus_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-nexus}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-nexus_dev_password}
+      MONGO_INITDB_DATABASE: nexus
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+      - ./Backend/apps/api/src/scripts/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - nexus_network
+  redis:
+    image: redis:7.2-alpine
+    container_name: nexus_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-nexus_redis_password} --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-nexus_redis_password}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - nexus_network
+  qdrant:
+    image: qdrant/qdrant:v1.10.1
+    container_name: nexus_qdrant
+    restart: unless-stopped
+    ports:
+      - '6333:6333'
+      - '6334:6334'
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    networks:
+      - nexus_network
+  api:
+    build:
+      context: ./Backend/apps/api
+      dockerfile: Dockerfile
+    container_name: nexus_api
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-nexus}:${MONGO_ROOT_PASSWORD:-nexus_dev_password}@mongodb:27017/nexus?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD:-nexus_redis_password}@redis:6379
+      QDRANT_URL: http://qdrant:6333
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - rag_uploads:/app/uploads
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    networks:
+      - nexus_network
+  web:
+    build:
+      context: ./Frontend/apps/web
+      dockerfile: Dockerfile
+    container_name: nexus_web
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_WS_URL: ws://localhost:3001
+    depends_on:
+      - api
+    networks:
+      - nexus_network
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: nexus_prometheus
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - nexus_network
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: nexus_grafana
+    restart: unless-stopped
+    ports:
+      - '3003:3000'
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-nexus_grafana}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./infra/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - nexus_network
+volumes:
+  mongodb_data:
+  redis_data:
+  qdrant_data:
+  prometheus_data:
+  grafana_data:
+  rag_uploads:
+networks:
+  nexus_network:
+    driver: bridge
