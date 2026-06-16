@@ -659,6 +659,6 @@ MIT License — see [LICENSE](./LICENSE) for details.
 Built with care by **Sumit Bhaskar**
 
 ![Made with Node.js](https://img.shields.io/badge/Made%20with-Node.js-339933?style=flat-square&logo=node.js)
-![Powered by AI](https://img.shields.io/badge/Powered%20by-Anthropic%20Claude-6C3DF4?style=flat-square)
+
 
 </div>
