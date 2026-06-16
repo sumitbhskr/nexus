@@ -1,0 +1,107 @@
+name: NEXUS CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — Lint + Test
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: nexus
+          MONGO_INITDB_ROOT_PASSWORD: nexus_dev_password
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/apps/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Backend/apps/api
+        run: npm ci
+
+      - name: Lint
+        working-directory: Backend/apps/api
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: Backend/apps/api
+        run: npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-64-chars-long-for-ci-pipeline-only-not-production
+          JWT_REFRESH_SECRET: test-refresh-secret-64-chars-long-for-ci-pipeline-only
+          ENCRYPTION_KEY: test-encryption-32-chars-long!!
+          MONGODB_URI: mongodb://nexus:nexus_dev_password@localhost:27017/nexus_test?authSource=admin
+          REDIS_URL: redis://localhost:6379
+          QDRANT_URL: http://localhost:6333
+
+  frontend:
+    name: Frontend — Lint + Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Frontend/apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Frontend/apps/web
+        run: npm ci
+
+      - name: Lint
+        working-directory: Frontend/apps/web
+        run: npm run lint
+
+      - name: Build
+        working-directory: Frontend/apps/web
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+
+  docker:
+    name: Docker — Validate Compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
