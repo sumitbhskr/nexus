@@ -132,6 +132,14 @@ app.get('/health', async (req, res) => {
   });
 });
 
+// ─── Prometheus Metrics ───────────────────────────────────────────────────────
+const { register } = require('./common/metrics');
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
 // ─── API Routes ───────────────────────────────────────────────────────────────
 const API_PREFIX = '/api/v1';
 

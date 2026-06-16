@@ -9,16 +9,24 @@ const COLLECTION_NAME = process.env.QDRANT_COLLECTION || 'nexus_embeddings';
 const VECTOR_SIZE = 1536; // text-embedding-3-small dimensions
 
 async function initQdrant() {
-  const url = process.env.QDRANT_URL || 'http://localhost:6333';
+  const url = process.env.QDRANT_URL || 'http://qdrant:6333';
 
   qdrantClient = new QdrantClient({ url });
 
-  // Verify connectivity
-  await qdrantClient.getCollections();
-  logger.info('Qdrant connected', { url });
+  try {
+    // Verify connectivity
+    await qdrantClient.getCollections();
+    logger.info('Qdrant connected', { url });
 
-  // Create collection if it doesn't exist
-  await ensureCollection();
+    // Create collection if it doesn't exist
+    await ensureCollection();
+  } catch (error) {
+    logger.warn('Qdrant connection failed — continuing without vector search', {
+      error: error.message,
+      url,
+    });
+    qdrantClient = null; // reset so getQdrantClient() throws cleanly
+  }
 }
 
 async function ensureCollection() {
