@@ -15,7 +15,6 @@ const tenantSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
       match: /^[a-z0-9-]+$/,
@@ -190,3 +189,4 @@ const User = mongoose.model('User', userSchema);
 const Tenant = mongoose.model('Tenant', tenantSchema);
 
 module.exports = { User, Tenant };
+

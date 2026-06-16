@@ -11,8 +11,7 @@ const VECTOR_SIZE = 1536; // text-embedding-3-small dimensions
 async function initQdrant() {
   const url = process.env.QDRANT_URL || 'http://qdrant:6333';
 
-  qdrantClient = new QdrantClient({ url });
-
+  qdrantClient = new QdrantClient({ url, checkCompatibility: false });
   try {
     // Verify connectivity
     await qdrantClient.getCollections();
@@ -83,3 +82,4 @@ function getCollectionName() {
 }
 
 module.exports = { initQdrant, getQdrantClient, getCollectionName };
+

@@ -1,4 +1,5 @@
 'use strict';
+require('dotenv').config();
 
 // ─── OpenTelemetry must be initialized BEFORE any other imports ───────────────
 // require('./observability/tracer');
@@ -202,15 +203,18 @@ async function bootstrap() {
         pid: process.pid,
       });
     });
-  } catch (error) {
+ } catch (error) {
     logger.error('Failed to start NEXUS API', {
       error: error.message,
       stack: error.stack,
     });
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(1);
+    } else {
+      throw error;
+    }
   }
 }
-
 // ─── Graceful shutdown ────────────────────────────────────────────────────────
 const shutdown = async (signal) => {
   logger.info(`${signal} received — initiating graceful shutdown`);
