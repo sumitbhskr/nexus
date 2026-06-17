@@ -1,3 +1,4 @@
+const { User, Tenant } = require('../src/modules/auth/auth.model');
 'use strict';
 
 /**
@@ -357,4 +358,5 @@ describe('DELETE /api/v1/auth/logout', () => {
     expect(res.status).toBe(401);
   }, 10000);
 });
+
 
