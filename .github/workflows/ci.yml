@@ -65,6 +65,22 @@ jobs:
           MONGODB_URI: mongodb://nexus:nexus_dev_password@localhost:27017/nexus_test?authSource=admin
           REDIS_URL: redis://localhost:6379
           QDRANT_URL: http://localhost:6333
+          ANTHROPIC_API_KEY: sk-ant-test-placeholder-for-ci-not-real-xxxxxxxxxxx
+          OPENAI_API_KEY: sk-test-placeholder-for-ci-not-real-xxxxxxxxxxxxxxx
+          LLM_MODEL: claude-sonnet-4-6
+          EMBEDDING_MODEL: text-embedding-3-small
+          LLM_MAX_TOKENS: 2000
+          LLM_TEMPERATURE: 0.1
+          APP_URL: http://localhost:3001
+          FRONTEND_URL: http://localhost:3000
+          PORT: 3001
+          LOG_LEVEL: error
+          RATE_LIMIT_WINDOW_MS: 60000
+          RATE_LIMIT_MAX_REQUESTS: 10000
+          AI_RATE_LIMIT_MAX: 10000
+          UPLOAD_MAX_SIZE_MB: 50
+          UPLOAD_DIR: ./uploads
+          QDRANT_COLLECTION: nexus_test
 
   frontend:
     name: Frontend — Lint + Build

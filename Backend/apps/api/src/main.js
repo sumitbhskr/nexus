@@ -276,6 +276,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-bootstrap();
+if (process.env.SKIP_BOOTSTRAP !== 'true') { bootstrap(); } else { connectMongoDB().then(() => connectRedis()); }
 
 module.exports = { app, server };
+

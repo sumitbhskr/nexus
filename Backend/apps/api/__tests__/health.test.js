@@ -64,6 +64,7 @@ process.env.UPLOAD_MAX_SIZE_MB = '50';
 process.env.UPLOAD_DIR = './uploads';
 
 // ─── Import app AFTER env is fully configured ─────────────────────────────────
+process.env.SKIP_BOOTSTRAP = 'true';
 const { app } = require('../src/main');
 
 // ─── Shared auth state (populated by register → reused by login/me/refresh/logout)
@@ -356,3 +357,4 @@ describe('DELETE /api/v1/auth/logout', () => {
     expect(res.status).toBe(401);
   }, 10000);
 });
+
