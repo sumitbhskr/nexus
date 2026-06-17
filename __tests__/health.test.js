@@ -35,7 +35,7 @@ process.env.JWT_EXPIRES_IN = '15m';
 process.env.JWT_REFRESH_EXPIRES_IN = '7d';
 
 // Databases
-process.env.MONGODB_URI = 'mongodb://nexus:nexus_dev_password@mongodb:27017/nexus_test?authSource=admin';
+process.env.MONGODB_URI = 'mongodb://nexus:nexus_dev_password@localhost:27017/nexus_test?authSource=admin';
 process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 process.env.QDRANT_URL = process.env.QDRANT_URL || 'http://localhost:6333';
 process.env.QDRANT_COLLECTION = 'nexus_test';
