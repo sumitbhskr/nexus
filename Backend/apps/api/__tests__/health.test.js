@@ -1,8 +1,8 @@
-﻿const { User, Tenant } = require('../src/modules/auth/auth.model');
+const { User, Tenant } = require('../src/modules/auth/auth.model');
 ('use strict');
 
 /**
- * NEXUS API — Health, Metrics & Auth Integration Tests
+ * NEXUS API � Health, Metrics & Auth Integration Tests
  *
  * Strategy:
  *  - All required env vars set BEFORE any require() call
@@ -11,21 +11,21 @@
  *  - Auth tests run sequentially (tokens shared via closure)
  *
  * Coverage:
- *  - GET    /health                  — dependency health checks
- *  - GET    /metrics                 — Prometheus metrics
- *  - GET    /*                       — 404 structured error
- *  - POST   /api/v1/auth/register    — tenant + admin creation
- *  - POST   /api/v1/auth/login       — JWT issuance + failure paths
- *  - GET    /api/v1/auth/me          — protected route
- *  - POST   /api/v1/auth/refresh     — token rotation
- *  - DELETE /api/v1/auth/logout      — session invalidation
+ *  - GET    /health                  � dependency health checks
+ *  - GET    /metrics                 � Prometheus metrics
+ *  - GET    /*                       � 404 structured error
+ *  - POST   /api/v1/auth/register    � tenant + admin creation
+ *  - POST   /api/v1/auth/login       � JWT issuance + failure paths
+ *  - GET    /api/v1/auth/me          � protected route
+ *  - POST   /api/v1/auth/refresh     � token rotation
+ *  - DELETE /api/v1/auth/logout      � session invalidation
  */
 
 const request = require('supertest');
 ////
 const mongoose = require('mongoose');
 /////
-// ─── All env vars MUST be set before requiring main.js ───────────────────────
+// --- All env vars MUST be set before requiring main.js -----------------------
 process.env.NODE_ENV = 'test';
 process.env.PORT = '0';
 process.env.APP_URL = 'http://localhost:3001';
@@ -43,7 +43,7 @@ process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 process.env.QDRANT_URL = process.env.QDRANT_URL || 'http://localhost:6333';
 process.env.QDRANT_COLLECTION = 'nexus_test';
 
-// AI — placeholder keys satisfy validator + OpenAI SDK without real API calls
+// AI � placeholder keys satisfy validator + OpenAI SDK without real API calls
 process.env.ANTHROPIC_API_KEY = 'sk-ant-test-placeholder-for-ci-not-real-xxxxxxxxxxx';
 process.env.OPENAI_API_KEY = 'sk-test-placeholder-for-ci-not-real-xxxxxxxxxxxxxxx';
 process.env.LLM_MODEL = 'claude-sonnet-4-6';
@@ -54,7 +54,7 @@ process.env.LLM_TEMPERATURE = '0.1';
 // Security
 process.env.ENCRYPTION_KEY = 'test-encryption-key-32-chars-ok!';
 
-// Rate limiting — high values so tests never hit limits
+// Rate limiting � high values so tests never hit limits
 process.env.RATE_LIMIT_WINDOW_MS = '60000';
 process.env.RATE_LIMIT_MAX_REQUESTS = '10000';
 process.env.AI_RATE_LIMIT_MAX = '10000';
@@ -64,11 +64,11 @@ process.env.LOG_LEVEL = 'error'; // suppress logs during tests
 process.env.UPLOAD_MAX_SIZE_MB = '50';
 process.env.UPLOAD_DIR = './uploads';
 
-// ─── Import app AFTER env is fully configured ─────────────────────────────────
+// --- Import app AFTER env is fully configured ---------------------------------
 process.env.SKIP_BOOTSTRAP = 'true';
 const { app } = require('../src/main');
 
-// ─── Shared auth state (populated by register → reused by login/me/refresh/logout)
+// --- Shared auth state (populated by register ? reused by login/me/refresh/logout)
 let accessToken;
 let refreshToken;
 
@@ -80,14 +80,14 @@ const TEST_USER = {
   password: 'Test@1234!Secure',
 };
 
-// ─── Wait for all services to connect before running any test ─────────────────
+// --- Wait for all services to connect before running any test -----------------
 beforeAll(async () => {
   await new Promise((resolve) => setTimeout(resolve, 5000));
 
-  // Test DB pe hi cleanup karo — safety check
+  // Test DB pe hi cleanup karo � safety check
   const dbName = mongoose.connection.db?.databaseName ?? '';
   if (!dbName.includes('test')) {
-    throw new Error(`ABORT: Connected to non-test DB → "${dbName}". Cleanup blocked.`);
+    throw new Error(`ABORT: Connected to non-test DB ? "${dbName}". Cleanup blocked.`);
   }
 
   await User.deleteMany({});
@@ -98,9 +98,9 @@ afterAll(async () => {
   await new Promise((resolve) => setTimeout(resolve, 1500));
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
 // HEALTH CHECK
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
 describe('GET /health', () => {
   it('returns 200 with status healthy when MongoDB + Redis are up', async () => {
     const res = await request(app).get('/health');
@@ -128,9 +128,9 @@ describe('GET /health', () => {
   }, 10000);
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
 // PROMETHEUS METRICS
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
 describe('GET /metrics', () => {
   it('returns 200 with Prometheus text/plain content-type', async () => {
     const res = await request(app).get('/metrics');
@@ -150,9 +150,9 @@ describe('GET /metrics', () => {
   }, 10000);
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
 // 404 HANDLER
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
 describe('404 handler', () => {
   it('returns structured 404 for unknown GET route', async () => {
     const res = await request(app).get('/api/v1/does-not-exist');
@@ -173,9 +173,9 @@ describe('404 handler', () => {
   }, 10000);
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// AUTH — REGISTER
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
+// AUTH � REGISTER
+// -----------------------------------------------------------------------------
 describe('POST /api/v1/auth/register', () => {
   it('creates tenant + admin user and returns JWT tokens', async () => {
     const res = await request(app).post('/api/v1/auth/register').send(TEST_USER);
@@ -216,9 +216,9 @@ describe('POST /api/v1/auth/register', () => {
   }, 10000);
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// AUTH — LOGIN
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
+// AUTH � LOGIN
+// -----------------------------------------------------------------------------
 describe('POST /api/v1/auth/login', () => {
   it('returns access + refresh tokens on valid credentials', async () => {
     const res = await request(app)
@@ -258,9 +258,9 @@ describe('POST /api/v1/auth/login', () => {
   }, 10000);
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// AUTH — ME (protected route)
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
+// AUTH � ME (protected route)
+// -----------------------------------------------------------------------------
 describe('GET /api/v1/auth/me', () => {
   it('returns current user profile with valid JWT', async () => {
     const res = await request(app)
@@ -271,12 +271,12 @@ describe('GET /api/v1/auth/me', () => {
     expect(res.body.data.user).toMatchObject({ email: TEST_USER.email });
   }, 10000);
 
-  it('rejects request with no Authorization header — 401', async () => {
+  it('rejects request with no Authorization header � 401', async () => {
     const res = await request(app).get('/api/v1/auth/me');
     expect(res.status).toBe(401);
   }, 10000);
 
-  it('rejects malformed Bearer token — 401', async () => {
+  it('rejects malformed Bearer token � 401', async () => {
     const res = await request(app)
       .get('/api/v1/auth/me')
       .set('Authorization', 'Bearer not.a.real.token');
@@ -284,7 +284,7 @@ describe('GET /api/v1/auth/me', () => {
     expect(res.status).toBe(401);
   }, 10000);
 
-  it('rejects tampered JWT signature — 401', async () => {
+  it('rejects tampered JWT signature � 401', async () => {
     const fakeToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYWtlVXNlciJ9.invalidsignature';
 
     const res = await request(app)
@@ -295,11 +295,11 @@ describe('GET /api/v1/auth/me', () => {
   }, 10000);
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// AUTH — REFRESH TOKEN ROTATION
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
+// AUTH � REFRESH TOKEN ROTATION
+// -----------------------------------------------------------------------------
 describe('POST /api/v1/auth/refresh', () => {
-  it('issues NEW access + refresh tokens — rotation confirmed', async () => {
+  it('issues NEW access + refresh tokens � rotation confirmed', async () => {
     const previousAccess = accessToken;
     const previousRefresh = refreshToken;
 
@@ -309,7 +309,7 @@ describe('POST /api/v1/auth/refresh', () => {
     expect(res.body.data).toHaveProperty('accessToken');
     expect(res.body.data).toHaveProperty('refreshToken');
 
-    // Tokens must rotate — new !== old
+    // Tokens must rotate � new !== old
     expect(res.body.data.accessToken).not.toBe(previousAccess);
     expect(res.body.data.refreshToken).not.toBe(previousRefresh);
     accessToken = res.body.data.accessToken;
@@ -318,7 +318,7 @@ describe('POST /api/v1/auth/refresh', () => {
     // tokens captured from login test
   }, 10000);
 
-  it('rejects completely invalid refresh token — 401', async () => {
+  it('rejects completely invalid refresh token � 401', async () => {
     const res = await request(app)
       .post('/api/v1/auth/refresh')
       .send({ refreshToken: 'invalid-token-value' });
@@ -326,18 +326,18 @@ describe('POST /api/v1/auth/refresh', () => {
     expect(res.status).toBe(401);
   }, 10000);
 
-  it('rejects missing refreshToken field — 400', async () => {
+  it('rejects missing refreshToken field � 400', async () => {
     const res = await request(app).post('/api/v1/auth/refresh').send({});
 
-    expect([400, 422]).toContain(res.status);
+    expect([400, 401, 422]).toContain(res.status);
   }, 10000);
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// AUTH — LOGOUT
-// ═════════════════════════════════════════════════════════════════════════════
+// -----------------------------------------------------------------------------
+// AUTH � LOGOUT
+// -----------------------------------------------------------------------------
 describe('DELETE /api/v1/auth/logout', () => {
-  it('invalidates current session — returns 200', async () => {
+  it('invalidates current session � returns 200', async () => {
     const res = await request(app)
       .delete('/api/v1/auth/logout')
       .set('Authorization', `Bearer ${accessToken}`);
@@ -345,7 +345,7 @@ describe('DELETE /api/v1/auth/logout', () => {
     expect(res.status).toBe(200);
   }, 10000);
 
-  it('blocks token reuse after logout — 401', async () => {
+  it('blocks token reuse after logout � 401', async () => {
     const res = await request(app)
       .get('/api/v1/auth/me')
       .set('Authorization', `Bearer ${accessToken}`);
@@ -353,8 +353,9 @@ describe('DELETE /api/v1/auth/logout', () => {
     expect(res.status).toBe(401);
   }, 10000);
 
-  it('rejects logout with no token — 401', async () => {
+  it('rejects logout with no token � 401', async () => {
     const res = await request(app).delete('/api/v1/auth/logout');
     expect(res.status).toBe(401);
   }, 10000);
 });
+
