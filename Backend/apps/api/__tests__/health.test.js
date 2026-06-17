@@ -1,5 +1,5 @@
-const { User, Tenant } = require('../src/modules/auth/auth.model');
-'use strict';
+﻿const { User, Tenant } = require('../src/modules/auth/auth.model');
+('use strict');
 
 /**
  * NEXUS API — Health, Metrics & Auth Integration Tests
@@ -181,16 +181,15 @@ describe('POST /api/v1/auth/register', () => {
     const res = await request(app).post('/api/v1/auth/register').send(TEST_USER);
 
     expect(res.status).toBe(201);
-    expect(res.body.data).toHaveProperty('accessToken');
-    expect(res.body.data).toHaveProperty('refreshToken');
+    expect(res.body.data).toHaveProperty('user');
+    expect(res.body.data).toHaveProperty('tenant');
     expect(res.body.data.user).toMatchObject({
       email: TEST_USER.email,
       role: 'admin',
     });
 
     // Store for downstream tests
-    accessToken = res.body.accessToken;
-    refreshToken = res.body.refreshToken;
+    // tokens captured from login test
   }, 15000);
 
   it('rejects duplicate email with 409', async () => {
@@ -269,7 +268,7 @@ describe('GET /api/v1/auth/me', () => {
       .set('Authorization', `Bearer ${accessToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ email: TEST_USER.email });
+    expect(res.body.data.user).toMatchObject({ email: TEST_USER.email });
   }, 10000);
 
   it('rejects request with no Authorization header — 401', async () => {
@@ -311,11 +310,12 @@ describe('POST /api/v1/auth/refresh', () => {
     expect(res.body.data).toHaveProperty('refreshToken');
 
     // Tokens must rotate — new !== old
-    expect(res.body.accessToken).not.toBe(previousAccess);
-    expect(res.body.refreshToken).not.toBe(previousRefresh);
+    expect(res.body.data.accessToken).not.toBe(previousAccess);
+    expect(res.body.data.refreshToken).not.toBe(previousRefresh);
+    accessToken = res.body.data.accessToken;
+    refreshToken = res.body.data.refreshToken;
 
-    accessToken = res.body.accessToken;
-    refreshToken = res.body.refreshToken;
+    // tokens captured from login test
   }, 10000);
 
   it('rejects completely invalid refresh token — 401', async () => {
@@ -358,5 +358,3 @@ describe('DELETE /api/v1/auth/logout', () => {
     expect(res.status).toBe(401);
   }, 10000);
 });
-
-
