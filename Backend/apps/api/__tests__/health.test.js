@@ -23,8 +23,6 @@
 const request = require('supertest');
 ////
 const mongoose = require('mongoose');
-const User = require('../src/models/User');
-const Tenant = require('../src/models/Tenant');
 /////
 // ─── All env vars MUST be set before requiring main.js ───────────────────────
 process.env.NODE_ENV = 'test';
