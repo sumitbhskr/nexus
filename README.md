@@ -772,7 +772,6 @@ Integration tests catch the full request lifecycle — middleware, auth, DB, res
 - [x] Jest integration test suite (26/26 passing)
 - [x] Multi-stage Docker builds
 - [x] RBAC permission matrix (admin / manager / analyst / viewer) — role hierarchy + authorize() middleware implemented
-- [x] RBAC permission matrix (viewer / editor / admin / super-admin)
 - [ ] HubSpot, Notion, Google Sheets connectors
 - [ ] Agent marketplace (shareable agent templates)
 - [ ] Sentry error tracking integration
