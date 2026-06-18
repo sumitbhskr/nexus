@@ -68,9 +68,12 @@
       "!src/scripts/**",
       "!src/main.js"
     ],
-     "coverageThreshold": {},
+    "coverageThreshold": {},
     "testMatch": [
       "**/__tests__/**/*.test.js"
+    ],
+    "setupFiles": [
+      "./jest.setup.env.js"
     ]
   }
 }

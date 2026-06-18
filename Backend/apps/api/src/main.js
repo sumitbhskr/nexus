@@ -12,13 +12,15 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 require('express-async-errors');
-require('dotenv').config();
+const swaggerUi = require('swagger-ui-express');
+
 
 const { connectMongoDB } = require('./config/database');
 const { connectRedis } = require('./config/redis');
 const { initQdrant } = require('./config/qdrant');
 const { initSocketIO } = require('./config/socket');
 const { validateEnv } = require('./config/env.validator');
+const swaggerSpec = require('./config/swagger');
 const logger = require('./common/utils/logger');
 const { errorHandler } = require('./common/middleware/errorHandler');
 const { requestLogger } = require('./common/middleware/requestLogger');
@@ -34,8 +36,6 @@ const ragRoutes = require('./modules/rag/rag.routes');
 const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
 const { router: observabilityRoutes } = require('./modules/observability/observability.routes');
 const webhookRoutes = require('./modules/integrations/webhook.routes');
-
-
 
 // ─── Validate environment on startup (fail-fast) ──────────────────────────────
 validateEnv();
@@ -141,6 +141,15 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
+// ─── Swagger Docs ──────────────────────────────────────────────────────────
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get('/api/docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
+
 // ─── API Routes ───────────────────────────────────────────────────────────────
 const API_PREFIX = '/api/v1';
 
@@ -203,7 +212,7 @@ async function bootstrap() {
         pid: process.pid,
       });
     });
- } catch (error) {
+  } catch (error) {
     logger.error('Failed to start NEXUS API', {
       error: error.message,
       stack: error.stack,
@@ -276,7 +285,10 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-if (process.env.SKIP_BOOTSTRAP !== 'true') { bootstrap(); } else { connectMongoDB().then(() => connectRedis()); }
+if (process.env.SKIP_BOOTSTRAP !== 'true') {
+  bootstrap();
+} else {
+  connectMongoDB().then(() => connectRedis());
+}
 
 module.exports = { app, server };
-
