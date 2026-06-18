@@ -771,7 +771,7 @@ Integration tests catch the full request lifecycle — middleware, auth, DB, res
 - [x] OpenAPI / Swagger documentation (`/api/docs`)
 - [x] Jest integration test suite (26/26 passing)
 - [x] Multi-stage Docker builds
-- [ ] RBAC permission matrix (viewer / editor / admin / super-admin)
+- [ x] RBAC permission matrix (viewer / editor / admin / super-admin)
 - [ ] HubSpot, Notion, Google Sheets connectors
 - [ ] Agent marketplace (shareable agent templates)
 - [ ] Sentry error tracking integration
