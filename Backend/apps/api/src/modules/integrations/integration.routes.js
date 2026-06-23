@@ -9,6 +9,9 @@ const { JiraConnector } = require('./jira/jira.connector');
 const { SlackConnector } = require('./slack/slack.connector');
 const { ZendeskConnector } = require('./zendesk/zendesk.connector');
 const { SalesforceConnector } = require('./salesforce/salesforce.connector');
+const { HubSpotConnector }      = require('./hubspot/hubspot.connector');
+const { NotionConnector }        = require('./notion/notion.connector');
+const { GoogleSheetsConnector }  = require('./google-sheets/google-sheets.connector');
 
 router.use(authenticate);
 
@@ -18,6 +21,9 @@ const CONNECTORS = {
   slack: (tenantId) => new SlackConnector(tenantId),
   zendesk: (tenantId) => new ZendeskConnector(tenantId),
   salesforce: (tenantId) => new SalesforceConnector(tenantId),
+  hubspot:        (tenantId) => new HubSpotConnector(tenantId),
+  notion:         (tenantId) => new NotionConnector(tenantId),
+ 'google-sheets': (tenantId) => new GoogleSheetsConnector(tenantId),
 };
 
 // ─── GET /api/v1/integrations ─────────────────────────────────────────────────
